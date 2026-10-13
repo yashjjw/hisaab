@@ -1,0 +1,76 @@
+# Smoke test: python tools/smoke_test.py <site-folder> <screenshot-folder>
+# Requires: pip install playwright && python -m playwright install chromium
+import subprocess, sys, time, os
+from playwright.sync_api import sync_playwright
+
+ROOT = sys.argv[1]
+OUT = sys.argv[2]
+srv = subprocess.Popen([sys.executable, "-m", "http.server", "8765", "--directory", ROOT], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+time.sleep(1.2)
+errors = []
+try:
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page(viewport={"width": 1440, "height": 900})
+        pg.on("console", lambda m: errors.append("console." + m.type + ": " + m.text) if m.type in ("error", "warning") else None)
+        pg.on("pageerror", lambda e: errors.append("pageerror: " + str(e)))
+        pg.goto("http://localhost:8765/index.html", wait_until="networkidle")
+        pg.wait_for_timeout(800)
+        pg.screenshot(path=os.path.join(OUT, "01_home.png"))
+        def click(text):
+            pg.get_by_role("button", name=text).first.click()
+            pg.wait_for_timeout(300)
+        def guide():
+            return pg.locator("h2").first.inner_text()
+        print("guide at home:", guide())
+        click("Check a bill")
+        print("guide after check:", guide())
+        pg.get_by_text("Ramesh Processors").first.click(); pg.wait_for_timeout(1700)
+        print("guide read:", guide())
+        click("Check this bill")
+        body = pg.inner_text("body")
+        print("verdict:", pg.locator("text=All 3 lines match").count()>0)
+        click("See how it adds up")
+        print("ramesh btn:", pg.get_by_role("button", name="Review payout").first.inner_text())
+        click("Review payout")
+        click("Approve")
+        pg.wait_for_timeout(1800)
+        pg.screenshot(path=os.path.join(OUT, "02_paid_ramesh.png"))
+        print("guide paid:", guide())
+        click("Check next bill"); pg.wait_for_timeout(1700)
+        click("Yes, P-205")
+        click("Check this bill")
+        body = pg.inner_text("body")
+        print("shree hold 8,505.00:", "8,505.00" in body)
+        pg.screenshot(path=os.path.join(OUT, "03_shree_verdict.png"))
+        click("See how it adds up"); print("shree btn:", pg.get_by_role("button", name="Review payout").first.inner_text()); click("Review payout"); click("Approve"); pg.wait_for_timeout(1800)
+        pg.get_by_role("radio", name="हिंदी").click(); pg.wait_for_timeout(300)
+        pg.screenshot(path=os.path.join(OUT, "04_shree_done.png"))
+        click("Back to home")
+        click("Send goods out")
+        click("All")
+        click("Create challan")
+        print("ewb required:", "Required" in pg.inner_text("body"))
+        click("Create e-way bill from this challan"); click("Generate e-way bill")
+        pg.screenshot(path=os.path.join(OUT, "05_challan.png"))
+        click("Done")
+        click("Inventory")
+        pg.screenshot(path=os.path.join(OUT, "06_inventory.png"))
+        click("Payouts")
+        pg.screenshot(path=os.path.join(OUT, "07_payouts.png"))
+        click("GST")
+        print("gst total:", "37,636" in pg.inner_text("body"))
+        pg.screenshot(path=os.path.join(OUT, "08_gst.png"))
+        print("tour:", pg.get_by_text("Tour ·").first.inner_text())
+        # phone-only page + small viewport
+        pg2 = b.new_page(viewport={"width": 1280, "height": 720})
+        pg2.on("pageerror", lambda e: errors.append("pageerror demo: " + str(e)))
+        pg2.goto("http://localhost:8765/demo.html", wait_until="networkidle"); pg2.wait_for_timeout(600)
+        pg2.screenshot(path=os.path.join(OUT, "09_demo_only.png"))
+        pg3 = b.new_page(viewport={"width": 390, "height": 844})
+        pg3.goto("http://localhost:8765/index.html", wait_until="networkidle"); pg3.wait_for_timeout(600)
+        pg3.screenshot(path=os.path.join(OUT, "10_mobile.png"), full_page=True)
+        b.close()
+finally:
+    srv.terminate()
+print("ERRORS:", errors if errors else "none")

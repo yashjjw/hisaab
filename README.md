@@ -6,6 +6,7 @@ Hisaab lets a small manufacturer snap a job worker's bill, check it against the 
 
 - `index.html` — landing page: the live phone demo on the left, a guide on the right that follows whichever screen you're on.
 - `demo.html` — the phone on its own (served at `/demo` on Vercel).
+- [`AI_BUILD_LOG.md`](AI_BUILD_LOG.md) — how AI was used to build this, what I decided, and known limitations.
 
 > Sample data only. Payouts, OTP, e-way bills and GST filings are simulated; GST 5% and TDS 1% are illustrative rates. Not an official Razorpay product.
 

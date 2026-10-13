@@ -1,0 +1,10 @@
+body { margin: 0; background: #F5F6F8; }
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+input { font: inherit; }
+a { color: #2F6BEB; }
+a:hover { color: #1D4ED8; }
+
+/* demo.html: just the phone, centred */
+body.phone-only { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 0; box-sizing: border-box; }
+.phone-shell { width: 390px; height: 844px; border-radius: 55px; overflow: hidden; box-shadow: 0 0 0 12px #1C1C1E, 0 0 0 14px #48484A, 0 30px 70px rgba(15,17,21,0.28); }
